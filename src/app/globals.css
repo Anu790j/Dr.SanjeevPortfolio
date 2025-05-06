@@ -1,26 +1,419 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+/* Base styles */
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 26, 44, 66;  /* Lighter dark background (was 5, 16, 20) */
+  --background: #1a2c42;         /* Lighter dark background (was #051014) */
+  --foreground: #ffffff;         /* Pure white for better readability (was #ededed) */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  
+  /* Light mode variables */
+  --light-foreground-rgb: 51, 65, 85;  /* Darker text for better contrast (was 10, 25, 47) */
+  --light-background-rgb: 248, 250, 252;
+  
+  /* Theme-specific colors */
+  --osc-blue: #38BDF8; 
+  --comp-gold: #F59E0B;
+  --text-muted: #CBD5E1;         /* Lighter muted text (was #94A3B8) */
+  --bg-dark: #1E3A59;            /* Lighter dark background (was #0F172A) */
+  
+  --light-osc-blue: #0369A1;     /* Darker blue for light mode (was #0284C7) */
+  --light-comp-gold: #B45309;    /* Darker gold for light mode (was #D97706) */
+  --light-text-muted: #64748B;
+  --light-bg-dark: #E2E8F0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  font-family: var(--font-sans, 'Inter', sans-serif);
+}
+
+/* Light mode styles */
+.light-mode body {
+  color: rgb(var(--light-foreground-rgb));
+  background: rgb(var(--light-background-rgb));
+}
+
+.light-mode .modern-pcb-background {
+  background-color: #F8FAFC;  /* Lighter background (was #F0F5FF) */
+}
+
+.light-mode .modern-pcb-background::before {
+  background-image: 
+    linear-gradient(rgba(0, 105, 132, 0.2) 1px, transparent 1px),  /* Darker lines for better visibility */
+    linear-gradient(90deg, rgba(0, 105, 132, 0.2) 1px, transparent 1px),
+    linear-gradient(rgba(180, 83, 9, 0.1) 1px, transparent 1px),   /* Darker gold color */
+    linear-gradient(90deg, rgba(180, 83, 9, 0.1) 1px, transparent 1px);
+}
+
+/* Original circuit background style */
+.circuit-background {
+  background-color: #1E3A59; /* Lighter blue base (was #0A1328) */
+  background-image: 
+    linear-gradient(rgba(120, 186, 255, 0.15) 1px, transparent 1px),  /* Brighter lines */
+    linear-gradient(90deg, rgba(120, 186, 255, 0.15) 1px, transparent 1px),
+    radial-gradient(rgba(240, 184, 102, 0.2) 2px, transparent 2px);   /* Brighter dots */
+  background-size: 50px 50px, 50px 50px, 150px 150px;
+  background-position: -1px -1px, -1px -1px, -1px -1px;
+  position: relative;
+}
+
+.circuit-background::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(to right, transparent 49px, rgba(16, 185, 129, 0.15) 49px, rgba(16, 185, 129, 0.15) 51px, transparent 51px),  /* Brighter lines */
+    linear-gradient(to bottom, transparent 49px, rgba(16, 185, 129, 0.15) 49px, rgba(16, 185, 129, 0.15) 51px, transparent 51px);
+  background-size: 100px 100px;
+  pointer-events: none;
+}
+
+/* Advanced PCB background style */
+.modern-pcb-background {
+  background-color: #1a2c42;  /* Lighter background (was #051014) */
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-pcb-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),  /* Brighter green lines */
+    linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(240, 184, 102, 0.05) 1px, transparent 1px),  /* Brighter gold lines */
+    linear-gradient(90deg, rgba(240, 184, 102, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+  z-index: 0;
+}
+
+.modern-pcb-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 50% 50%, rgba(120, 186, 255, 0.05) 0%, transparent 40%);  /* Brighter blue glow */
+  background-size: 300px 300px;
+  background-position: 0 0;
+  z-index: 0;
+}
+
+/* PCB circuit patterns */
+.pcb-trace-pattern {
+  position: relative;
+}
+
+.pcb-trace-pattern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(45deg, rgba(240, 184, 102, 0.08) 25%, transparent 25%),  /* Brighter gold */
+    linear-gradient(-45deg, rgba(240, 184, 102, 0.08) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(240, 184, 102, 0.08) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(240, 184, 102, 0.08) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  pointer-events: none;
+  opacity: 0.4;  /* Increased opacity */
+  z-index: -1;
+}
+
+/* Glowing effects */
+.led-glow-blue {
+  box-shadow: 0 0 10px rgba(120, 186, 255, 0.7), 0 0 20px rgba(120, 186, 255, 0.3);  /* Brighter blue glow */
+}
+
+.led-glow-green {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7), 0 0 20px rgba(16, 185, 129, 0.3);  /* Brighter green glow */
+}
+
+.led-glow-gold {
+  box-shadow: 0 0 10px rgba(240, 184, 102, 0.7), 0 0 20px rgba(240, 184, 102, 0.3);  /* Brighter gold glow */
+}
+
+/* Copper trace effects */
+.copper-trace {
+  background: linear-gradient(to right, #D28B4F, #F0B866, #D28B4F);  /* Brighter copper colors */
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a2c42;  /* Lighter background (was #051014) */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D28B4F;  /* Brighter copper (was #B87333) */
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #F0B866;  /* Brighter gold (was #D4AF37) */
+}
+
+/* Text effects */
+.text-led-glow-blue {
+  color: #78BAFF;  /* Brighter blue (was #39A9DB) */
+  text-shadow: 0 0 5px rgba(120, 186, 255, 0.7);
+}
+
+.text-led-glow-green {
+  color: #10B981;  /* Brighter green (was #00FF9F) */
+  text-shadow: 0 0 5px rgba(16, 185, 129, 0.7);
+}
+
+/* Animated circuit elements */
+.circuit-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+/* Enhanced Circuit Background */
+.circuit-background {
+  background-color: #1E3A59; /* Lighter blue base (was #0A1328) */
+  background-image: 
+    linear-gradient(rgba(120, 186, 255, 0.15) 1px, transparent 1px),  /* Brighter lines */
+    linear-gradient(90deg, rgba(120, 186, 255, 0.15) 1px, transparent 1px),
+    radial-gradient(rgba(240, 184, 102, 0.2) 2px, transparent 2px);   /* Brighter dots */
+  background-size: 50px 50px, 50px 50px, 150px 150px;
+  background-position: -1px -1px, -1px -1px, -1px -1px;
+  position: relative;
+}
+
+.circuit-background::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(to right, transparent 49px, rgba(16, 185, 129, 0.15) 49px, rgba(16, 185, 129, 0.15) 51px, transparent 51px),  /* Brighter lines */
+    linear-gradient(to bottom, transparent 49px, rgba(16, 185, 129, 0.15) 49px, rgba(16, 185, 129, 0.15) 51px, transparent 51px);
+  background-size: 100px 100px;
+  pointer-events: none;
+}
+
+/* Enhanced PCB background style */
+.modern-pcb-background {
+  background-color: #1a2c42;  /* Lighter background (was #051014) */
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-pcb-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),  /* Brighter green lines */
+    linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(240, 184, 102, 0.05) 1px, transparent 1px),  /* Brighter gold lines */
+    linear-gradient(90deg, rgba(240, 184, 102, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+  z-index: 0;
+}
+
+.modern-pcb-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 50% 50%, rgba(120, 186, 255, 0.05) 0%, transparent 40%);  /* Brighter blue glow */
+  background-size: 300px 300px;
+  background-position: 0 0;
+  z-index: 0;
+}
+
+/* Enhanced PCB circuit patterns */
+.pcb-trace-pattern {
+  position: relative;
+}
+
+.pcb-trace-pattern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(45deg, rgba(240, 184, 102, 0.08) 25%, transparent 25%),  /* Brighter gold */
+    linear-gradient(-45deg, rgba(240, 184, 102, 0.08) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(240, 184, 102, 0.08) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(240, 184, 102, 0.08) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  pointer-events: none;
+  opacity: 0.4;  /* Increased opacity */
+  z-index: -1;
+}
+
+/* Enhanced glowing effects */
+.led-glow-blue {
+  box-shadow: 0 0 10px rgba(120, 186, 255, 0.7), 0 0 20px rgba(120, 186, 255, 0.3);  /* Brighter blue glow */
+}
+
+.led-glow-green {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7), 0 0 20px rgba(16, 185, 129, 0.3);  /* Brighter green glow */
+}
+
+.led-glow-gold {
+  box-shadow: 0 0 10px rgba(240, 184, 102, 0.7), 0 0 20px rgba(240, 184, 102, 0.3);  /* Brighter gold glow */
+}
+
+/* Enhanced copper trace effects */
+.copper-trace {
+  background: linear-gradient(to right, #D28B4F, #F0B866, #D28B4F);  /* Brighter copper colors */
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Enhanced text effects */
+.text-led-glow-blue {
+  color: #78BAFF;  /* Brighter blue (was #39A9DB) */
+  text-shadow: 0 0 5px rgba(120, 186, 255, 0.7);
+}
+
+.text-led-glow-green {
+  color: #10B981;  /* Brighter green (was #00FF9F) */
+  text-shadow: 0 0 5px rgba(16, 185, 129, 0.7);
+}
+
+/* Enhanced animated circuit elements */
+.circuit-pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { 
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.5);
+  }
+  100% { 
+    opacity: 0.3;
+    transform: scale(1);
+  }
+}
+
+/* Enhanced gradient hover effects */
+.gradient-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, transparent, rgba(120, 186, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.gradient-hover:hover::before {
+  transform: translateX(100%);
+}
+
+/* Enhanced 3D effect for cards */
+.card-3d {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.card-3d:hover {
+  transform: translateZ(10px) rotateX(5deg) rotateY(5deg);
+  box-shadow: 
+    0 10px 20px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(120, 186, 255, 0.1);
+}
+
+/* Enhanced moving line effect */
+.moving-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.moving-line::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #78BAFF, transparent);
+  transform: translateX(-100%);
+  animation: moveLine 3s infinite;
+}
+
+@keyframes moveLine {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Enhanced floating elements */
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
