@@ -7,6 +7,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import AdminThemeToggle from "@/components/admin/AdminThemeToggle";
 import { useTheme } from "@/context/ThemeContext";
+import { useSession } from "next-auth/react";
 
 export default function AdminLayout({
   children,
@@ -16,6 +17,7 @@ export default function AdminLayout({
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
