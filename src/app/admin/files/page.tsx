@@ -18,7 +18,7 @@ interface FileData {
 }
 
 export default function AdminFiles() {
-  const { data: session, status } = useSession();
+  // const { data: session, status } = useSession();
   const [files, setFiles] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);

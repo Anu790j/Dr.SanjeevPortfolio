@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+
 import { redirect, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
@@ -13,7 +13,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = useSession();
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const { theme } = useTheme();

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SimpleEditor from '@/components/admin/SimpleEditor';
 import BackButton from '@/components/admin/BackButton';
-import AdminCard from '@/components/admin/AdminCard';
+// import AdminCard from '@/components/admin/AdminCard';
 
 interface Professor {
   _id?: string;

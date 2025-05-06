@@ -8,8 +8,6 @@ import { PublicationCard } from '@/components/publications/PublicationCard';
 import { ProjectCard } from '@/components/publications/ProjectCard';
 import { LoadingIndicator } from '@/components/ui/LoadingIndicator';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
-import { GradientHoverCard } from '@/components/animations/GradientHoverCard';
-import { BlurCard } from '@/components/ui/BlurCard';
 
 interface Publication {
   _id: string;
