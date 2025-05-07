@@ -1,13 +1,14 @@
 "use client";
 
 
-import { redirect, usePathname } from "next/navigation";
+import { redirect, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import AdminThemeToggle from "@/components/admin/AdminThemeToggle";
 import { useTheme } from "@/context/ThemeContext";
 import { useSession } from "next-auth/react";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export default function AdminLayout({
   children,
@@ -16,21 +17,31 @@ export default function AdminLayout({
 }) {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    // Reset the navigation state when pathname changes
+    setIsNavigating(false);
+  }, [pathname]);
+
+  const handleNavigation = (path: string) => {
+    if (path !== pathname) {
+      setIsNavigating(true);
+      router.push(path);
+    }
+  };
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
   }
 
   if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-pulse h-8 w-8 bg-osc-blue rounded-full"></div>
-      </div>
-    );
+    return <PageLoader message="Loading session..." />;
   }
 
   if (status === "unauthenticated") {
@@ -39,6 +50,8 @@ export default function AdminLayout({
 
   return (
     <div className={`min-h-screen flex flex-col md:flex-row ${isDark ? 'bg-bg-darker' : 'bg-bg-primary'}`}>
+      {isNavigating && <PageLoader message="Loading page..." />}
+      
       {/* Sidebar */}
       <motion.div 
         className={`md:w-64 ${isDark ? 'bg-bg-dark' : 'bg-bg-secondary'} border-r border-osc-blue border-opacity-20 md:fixed md:h-screen overflow-y-auto z-10 shadow-lg`}
@@ -47,7 +60,7 @@ export default function AdminLayout({
         transition={{ duration: 0.3 }}
       >
         <div className="p-6 flex justify-between items-center border-b border-osc-blue border-opacity-10">
-          <Link href="/admin/dashboard" className="flex items-center space-x-2">
+          <Link href="/admin/dashboard" className="flex items-center space-x-2" onClick={() => handleNavigation('/admin/dashboard')}>
             <span className="text-xl text-osc-blue font-bold">Admin Panel</span>
           </Link>
           <div className="flex items-center space-x-2">
@@ -78,10 +91,11 @@ export default function AdminLayout({
             <li>
               <Link 
                 href="/admin/dashboard" 
-                className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/dashboard'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
                   pathname.includes('/admin/dashboard') 
-                    ? 'bg-osc-blue bg-opacity-20 text-osc-blue font-medium' 
-                    : 'hover:bg-osc-blue hover:bg-opacity-10'
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -95,10 +109,11 @@ export default function AdminLayout({
             <li>
               <Link 
                 href="/admin/profile" 
-                className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/profile'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
                   pathname.includes('/admin/profile') 
-                    ? 'bg-osc-blue bg-opacity-20 text-osc-blue font-medium' 
-                    : 'hover:bg-osc-blue hover:bg-opacity-10'
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,10 +125,11 @@ export default function AdminLayout({
             <li>
               <Link 
                 href="/admin/publications" 
-                className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/publications'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
                   pathname.includes('/admin/publications') 
-                    ? 'bg-osc-blue bg-opacity-20 text-osc-blue font-medium' 
-                    : 'hover:bg-osc-blue hover:bg-opacity-10'
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,11 +140,44 @@ export default function AdminLayout({
             </li>
             <li>
               <Link 
+                href="/admin/students" 
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/students'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
+                  pathname.includes('/admin/students') 
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Students
+              </Link>
+            </li>
+            <li>
+              <Link 
+                href="/admin/awards" 
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/awards'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
+                  pathname.includes('/admin/awards') 
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                Awards
+              </Link>
+            </li>
+            <li>
+              <Link 
                 href="/admin/projects" 
-                className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/projects'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
                   pathname.includes('/admin/projects') 
-                    ? 'bg-osc-blue bg-opacity-20 text-osc-blue font-medium' 
-                    : 'hover:bg-osc-blue hover:bg-opacity-10'
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,10 +189,11 @@ export default function AdminLayout({
             <li>
               <Link 
                 href="/admin/courses" 
-                className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/courses'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
                   pathname.includes('/admin/courses') 
-                    ? 'bg-osc-blue bg-opacity-20 text-osc-blue font-medium' 
-                    : 'hover:bg-osc-blue hover:bg-opacity-10'
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,10 +207,11 @@ export default function AdminLayout({
             <li>
               <Link 
                 href="/admin/files" 
-                className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
+                onClick={(e) => { e.preventDefault(); handleNavigation('/admin/files'); }}
+                className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 ${
                   pathname.includes('/admin/files') 
-                    ? 'bg-osc-blue bg-opacity-20 text-osc-blue font-medium' 
-                    : 'hover:bg-osc-blue hover:bg-opacity-10'
+                    ? `${isDark ? 'bg-osc-blue/20 text-osc-blue' : 'bg-osc-blue/20 text-osc-blue'} font-medium shadow-sm` 
+                    : `hover:bg-osc-blue/10 active:bg-osc-blue/15 ${isDark ? 'text-gray-200' : 'text-gray-700'} hover:text-osc-blue hover:translate-x-1`
                 }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -174,7 +225,9 @@ export default function AdminLayout({
           <div className="mt-8 pt-6 border-t border-osc-blue border-opacity-10">
             <Link 
               href="/"
-              className="flex items-center py-2 px-4 rounded-lg hover:bg-osc-blue hover:bg-opacity-10 transition-colors"
+              className={`flex items-center py-2 px-4 rounded-lg transition-all duration-200 
+                ${isDark ? 'text-gray-300' : 'text-gray-700'} 
+                hover:bg-osc-blue/10 hover:text-osc-blue active:bg-osc-blue/15 hover:translate-x-1`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />

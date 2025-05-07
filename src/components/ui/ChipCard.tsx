@@ -58,12 +58,12 @@ export const ChipCard: React.FC<ChipCardProps> = ({
         translateZ: 20,
         rotateX: 2,
         rotateY: 2,
-      }}
+      } as any}
       className={`relative ${className}`}
       style={{
         transformStyle: 'preserve-3d',
         perspective: '1000px',
-      }}
+      } as any}
     >
       <div className={`
         relative overflow-hidden rounded-lg
@@ -75,7 +75,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
           className="absolute inset-0 opacity-10 pointer-events-none"
           animate={{
             backgroundPosition: ['0% 0%', '100% 100%'],
-          }}
+          } as any}
           transition={{
             duration: 20,
             repeat: Infinity,
@@ -88,7 +88,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
               radial-gradient(circle at 30% 70%, ${typeStyles[type].color}20 0%, transparent 20%)
             `,
             backgroundSize: '100% 100%',
-          }}
+          } as any}
         />
         
         {/* Moving flash effect */}
@@ -96,7 +96,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
           className="absolute inset-0 opacity-0 pointer-events-none"
           style={{
             background: `linear-gradient(90deg, transparent 0%, ${typeStyles[type].color}20 10%, transparent 20%)`,
-          }}
+          } as any}
           animate={{
             opacity: [0, 0.6, 0],
             x: ['-100%', '200%'],
@@ -119,7 +119,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
                   `0 0 8px ${typeStyles[type].color}`,
                   `0 0 2px ${typeStyles[type].color}60`
                 ]
-              }}
+              } as any}
               transition={{ duration: 1.5, repeat: Infinity }}
             />
             <h3 className="text-osc-blue font-semibold tracking-wide">{title}</h3>
@@ -141,7 +141,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
                   `0 0 4px ${typeStyles[type].color}`,
                   'none'
                 ]
-              }}
+              } as any}
               transition={{ 
                 duration: 2, 
                 repeat: Infinity,
@@ -164,7 +164,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
                   `0 0 4px ${typeStyles[type].color}`,
                   'none'
                 ]
-              }}
+              } as any}
               transition={{ 
                 duration: 2, 
                 repeat: Infinity,
@@ -181,7 +181,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
             translateZ: 10,
             transition: { duration: 0.3 }
           }}
-          style={{ transformStyle: 'preserve-3d' }}
+          style={{ transformStyle: 'preserve-3d' } as any}
         >
           <motion.div
             initial={{ opacity: 0 }}
@@ -224,7 +224,7 @@ export const ChipCard: React.FC<ChipCardProps> = ({
                 }}
                 style={{
                   strokeDasharray: 100
-                }}
+                } as any}
                 transition={{
                   duration: 10,
                   repeat: Infinity,

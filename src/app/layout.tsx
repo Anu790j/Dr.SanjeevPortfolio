@@ -1,10 +1,17 @@
 // src/app/layout.tsx
-"use client";
 
-import { ThemeProvider } from '@/context/ThemeContext';
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import { Providers } from './providers';
-import CircuitBackground from '@/components/layout/CircuitBackground';
-import './globals.css';
+import ClientLayout from '../components/layout/ClientLayout';
+
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'Professor Portfolio',
+  description: 'Academic portfolio for university professor',
+}
 
 export default function RootLayout({
   children,
@@ -12,13 +19,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
         <Providers>
-          <ThemeProvider>
-            <CircuitBackground />
+          <ClientLayout>
             {children}
-          </ThemeProvider>
+          </ClientLayout>
         </Providers>
       </body>
     </html>

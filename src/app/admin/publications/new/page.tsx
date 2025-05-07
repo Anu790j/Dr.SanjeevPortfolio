@@ -2,19 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { toast, Toaster } from 'react-hot-toast';
+import { AdminButton } from '@/components/ui/AdminButton';
+import { FileUpload } from '@/components/ui/FileUpload';
+import { useTheme } from '@/context/ThemeContext';
+import { useSession } from 'next-auth/react';
+import BackButton from '@/components/admin/BackButton';
 
 // Define Publication interface
 interface Publication {
   title: string;
-  authors: string[];
-  journal: string;
+  authors: string;
+  category: 'journal' | 'conference' | 'patent';
+  journal?: string;
+  conference?: string;
   year: number;
-  volume: string;
-  issue: string;
-  pages: string;
-  doi: string;
-  url: string;
-  abstract: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  doi?: string;
+  url?: string;
+  abstract?: string;
+  imageUrl?: string;
 }
 
 export default function NewPublicationPage() {
@@ -22,7 +32,8 @@ export default function NewPublicationPage() {
   const [saving, setSaving] = useState(false);
   const [publication, setPublication] = useState<Publication>({
     title: '',
-    authors: [''],
+    authors: '',
+    category: 'journal',
     journal: '',
     year: new Date().getFullYear(),
     volume: '',
@@ -30,16 +41,19 @@ export default function NewPublicationPage() {
     pages: '',
     doi: '',
     url: '',
-    abstract: ''
+    abstract: '',
+    imageUrl: ''
   });
   
+  const { data: session, status } = useSession();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('admin-token');
-    if (!token) {
+    if (status === "unauthenticated") {
       router.push('/admin/login');
     }
-  }, [router]);
+  }, [router, status]);
   
   async function savePublication(e: React.FormEvent) {
     e.preventDefault();
@@ -53,208 +67,259 @@ export default function NewPublicationPage() {
       });
       
       if (res.ok) {
+        toast.success('Publication saved successfully');
         router.push('/admin/publications');
       } else {
-        alert('Failed to save publication');
+        const errorData = await res.json();
+        toast.error(errorData.error || 'Failed to save publication');
       }
     } catch (error) {
       console.error('Error saving publication:', error);
-      alert('Error saving publication');
+      toast.error('Error saving publication');
     } finally {
       setSaving(false);
     }
   }
   
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setPublication(prev => ({ ...prev, [name]: value }));
   }
   
-  function handleAuthorChange(index: number, value: string) {
-    const updatedAuthors = [...publication.authors];
-    updatedAuthors[index] = value;
-    setPublication(prev => ({ ...prev, authors: updatedAuthors }));
-  }
-  
-  function addAuthor() {
+  function handleImageUploaded(fileId: string) {
     setPublication(prev => ({
       ...prev,
-      authors: [...prev.authors, '']
+      imageUrl: fileId
     }));
   }
   
-  function removeAuthor(index: number) {
-    if (publication.authors.length === 1) return;
-    const updatedAuthors = [...publication.authors];
-    updatedAuthors.splice(index, 1);
-    setPublication(prev => ({ ...prev, authors: updatedAuthors }));
+  if (status === "loading") {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="flex justify-center py-12">
+          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${
+            isDark ? 'border-osc-blue' : 'border-osc-blue'
+          }`}></div>
+        </div>
+      </div>
+    );
   }
   
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Add New Publication</h1>
-        <button 
-          onClick={() => router.push('/admin/publications')}
-          className="px-4 py-2 text-sm bg-bg-dark rounded-lg hover:bg-osc-blue hover:bg-opacity-20"
-        >
-          Back to Publications
-        </button>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <Toaster position="top-right" />
+      <BackButton />
+      <h1 className="text-2xl font-bold mb-6">Add New Publication</h1>
       
-      <form onSubmit={savePublication} className="space-y-6">
-        <div>
-          <label className="block mb-2 text-sm">Title *</label>
+      <form onSubmit={savePublication} className={`p-6 rounded-lg ${isDark ? 'bg-bg-dark' : 'bg-gray-50'}`}>
+        <div className="mb-4">
+          <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Title *</label>
           <input
             type="text"
             name="title"
             value={publication.title}
             onChange={handleChange}
-            className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
+            className={`w-full p-2 rounded-lg border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
             required
           />
         </div>
         
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-sm">Authors *</label>
-            <button
-              type="button"
-              onClick={addAuthor}
-              className="text-sm text-comp-gold hover:underline"
-            >
-              + Add Author
-            </button>
-          </div>
-          
-          {publication.authors.map((author, index) => (
-            <div key={index} className="mb-2 flex items-center">
-              <input
-                type="text"
-                value={author}
-                onChange={(e) => handleAuthorChange(index, e.target.value)}
-                className="flex-1 p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
-                placeholder="Author name"
-                required
-              />
-              {publication.authors.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeAuthor(index)}
-                  className="ml-2 px-2 py-1 text-xs text-red-500 hover:bg-red-500 hover:bg-opacity-10 rounded"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
+        <div className="mb-4">
+          <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Authors *</label>
+          <input
+            type="text"
+            name="authors"
+            value={publication.authors}
+            onChange={handleChange}
+            className={`w-full p-2 rounded-lg border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
+            placeholder="List authors separated by commas"
+            required
+          />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mb-4">
+          <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Category *</label>
+          <select
+            name="category"
+            value={publication.category}
+            onChange={handleChange}
+            className={`w-full p-2 rounded-lg border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
+            required
+          >
+            <option value="journal">Journal</option>
+            <option value="conference">Conference</option>
+            <option value="patent">Patent</option>
+          </select>
+        </div>
+        
+        <div className="mb-6">
+          <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Publication Image</label>
+          <FileUpload
+            currentFileId={publication.imageUrl}
+            onFileUploaded={handleImageUploaded}
+            previewUrl={publication.imageUrl ? `/api/files/${publication.imageUrl}` : undefined}
+            label="Upload Image"
+          />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block mb-2 text-sm">Journal/Conference *</label>
+            <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Journal/Conference *</label>
             <input
               type="text"
               name="journal"
               value={publication.journal}
               onChange={handleChange}
-              className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
+              className={`w-full p-2 rounded-lg border ${
+                isDark 
+                  ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               required
             />
           </div>
           
           <div>
-            <label className="block mb-2 text-sm">Year *</label>
+            <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Year *</label>
             <input
               type="number"
               name="year"
               value={publication.year}
               onChange={handleChange}
-              className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
+              className={`w-full p-2 rounded-lg border ${
+                isDark 
+                  ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               required
+              min="1900"
+              max="2100"
             />
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block mb-2 text-sm">Volume</label>
+            <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Volume</label>
             <input
               type="text"
               name="volume"
               value={publication.volume}
               onChange={handleChange}
-              className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
+              className={`w-full p-2 rounded-lg border ${
+                isDark 
+                  ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             />
           </div>
           
           <div>
-            <label className="block mb-2 text-sm">Issue</label>
+            <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Issue</label>
             <input
               type="text"
               name="issue"
               value={publication.issue}
               onChange={handleChange}
-              className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
+              className={`w-full p-2 rounded-lg border ${
+                isDark 
+                  ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             />
           </div>
           
           <div>
-            <label className="block mb-2 text-sm">Pages</label>
+            <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Pages</label>
             <input
               type="text"
               name="pages"
               value={publication.pages}
               onChange={handleChange}
-              className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
-              placeholder="e.g., 123-145"
+              className={`w-full p-2 rounded-lg border ${
+                isDark 
+                  ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>DOI</label>
+            <input
+              type="text"
+              name="doi"
+              value={publication.doi}
+              onChange={handleChange}
+              className={`w-full p-2 rounded-lg border ${
+                isDark 
+                  ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+            />
+          </div>
+          
+          <div>
+            <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>URL</label>
+            <input
+              type="url"
+              name="url"
+              value={publication.url}
+              onChange={handleChange}
+              className={`w-full p-2 rounded-lg border ${
+                isDark 
+                  ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
+              placeholder="https://..."
             />
           </div>
         </div>
         
         <div>
-          <label className="block mb-2 text-sm">DOI</label>
-          <input
-            type="text"
-            name="doi"
-            value={publication.doi}
-            onChange={handleChange}
-            className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
-            placeholder="e.g., 10.1000/xyz123"
-          />
-        </div>
-        
-        <div>
-          <label className="block mb-2 text-sm">URL</label>
-          <input
-            type="url"
-            name="url"
-            value={publication.url}
-            onChange={handleChange}
-            className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
-            placeholder="https://..."
-          />
-        </div>
-        
-        <div>
-          <label className="block mb-2 text-sm">Abstract</label>
+          <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>Abstract</label>
           <textarea
             name="abstract"
             value={publication.abstract}
             onChange={handleChange}
-            rows={5}
-            className="w-full p-2 bg-bg-dark rounded-lg border border-osc-blue border-opacity-50"
-          />
+            rows={4}
+            className={`w-full p-2 rounded-lg border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/30 text-white' 
+                : 'bg-white border-gray-300 text-gray-900'
+            }`}
+          ></textarea>
         </div>
         
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-6 py-2 bg-comp-gold bg-opacity-20 border border-comp-gold rounded-md hover:bg-opacity-30 transition-all"
+        <div className="flex justify-end space-x-4 pt-4">
+          <AdminButton
+            type="secondary"
+            onClick={() => router.push('/admin/publications')}
           >
-            {saving ? 'Saving...' : 'Save Publication'}
-          </button>
+            Cancel
+          </AdminButton>
+          
+          <AdminButton
+            type="primary"
+            buttonType="submit"
+            isLoading={saving}
+          >
+            Save Publication
+          </AdminButton>
         </div>
       </form>
     </div>

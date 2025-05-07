@@ -5,12 +5,17 @@ import { motion } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
 import { useTheme } from '@/context/ThemeContext';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
-interface ContactInfo {
-  office?: string;
-  email?: string;
-  phone?: string;
-  officeHours?: string;
-  socialLinks?: Array<{
+import { Footer } from '@/components/layout/Footer';
+
+interface ProfessorData {
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  office: string;
+  department: string;
+  university: string;
+  socialLinks: Array<{
     name: string;
     url: string;
     icon: string;
@@ -18,7 +23,7 @@ interface ContactInfo {
 }
 
 export default function ContactPage() {
-  const [contactInfo, setContactInfo] = useState<ContactInfo>({});
+  const [professorData, setProfessorData] = useState<ProfessorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
@@ -33,21 +38,21 @@ export default function ContactPage() {
   const isDark = theme === 'dark';
   
   useEffect(() => {
-    async function fetchContactInfo() {
+    async function fetchProfessorData() {
       try {
-        const res = await fetch('/api/contact-info');
+        const res = await fetch('/api/professor');
         if (res.ok) {
           const data = await res.json();
-          setContactInfo(data);
+          setProfessorData(data);
         }
       } catch (error) {
-        console.error('Error fetching contact info:', error);
+        console.error('Error fetching professor data:', error);
       } finally {
         setLoading(false);
       }
     }
     
-    fetchContactInfo();
+    fetchProfessorData();
   }, []);
   
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
@@ -121,66 +126,66 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {contactInfo.office && (
+                  {professorData?.office && (
                     <div className="flex items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-osc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                       <div>
                         <p className="font-medium">Office</p>
-                        <p className="text-text-muted">{contactInfo.office}</p>
+                        <p className="text-text-muted">{professorData.office}</p>
                       </div>
                     </div>
                   )}
                   
-                  {contactInfo.email && (
+                  {professorData?.email && (
                     <div className="flex items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-osc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                       <div>
                         <p className="font-medium">Email</p>
-                        <a href={`mailto:${contactInfo.email}`} className="text-text-muted hover:text-osc-blue">{contactInfo.email}</a>
+                        <a href={`mailto:${professorData.email}`} className="text-text-muted hover:text-osc-blue">{professorData.email}</a>
                       </div>
                     </div>
                   )}
                   
-                  {contactInfo.phone && (
+                  {professorData?.phone && (
                     <div className="flex items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-osc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                       <div>
                         <p className="font-medium">Phone</p>
-                        <p className="text-text-muted">{contactInfo.phone}</p>
+                        <p className="text-text-muted">{professorData.phone}</p>
                       </div>
                     </div>
                   )}
                   
-                  {contactInfo.officeHours && (
+                  {professorData?.department && professorData?.university && (
                     <div className="flex items-start">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-osc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <div>
-                        <p className="font-medium">Office Hours</p>
-                        <p className="text-text-muted">{contactInfo.officeHours}</p>
+                        <p className="font-medium">Department</p>
+                        <p className="text-text-muted">{professorData.department}, {professorData.university}</p>
                       </div>
                     </div>
                   )}
                   
-                  {!contactInfo.office && !contactInfo.email && !contactInfo.phone && !contactInfo.officeHours && (
+                  {!professorData?.office && !professorData?.email && !professorData?.phone && !professorData?.department && (
                     <div className="text-text-muted">
                       <p>Contact information not available.</p>
                       <p className="mt-2">You can use the contact form to send me a message.</p>
                     </div>
                   )}
                   
-                  {contactInfo.socialLinks && contactInfo.socialLinks.length > 0 && (
+                  {professorData?.socialLinks && professorData.socialLinks.length > 0 && (
                     <div className="mt-6">
                       <p className="font-medium mb-2">Connect With Me</p>
                       <div className="flex space-x-4">
-                        {contactInfo.socialLinks.map((link, index) => (
+                        {professorData.socialLinks.map((link, index) => (
                           <a 
                             key={index}
                             href={link.url}
@@ -299,6 +304,7 @@ export default function ContactPage() {
           </div>
         </main>
       </div>
+      <Footer />
     </>
   );
 }

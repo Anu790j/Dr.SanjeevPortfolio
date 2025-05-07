@@ -4,6 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import BackButton from '@/components/admin/BackButton';
+import { AdminButton } from '@/components/ui/AdminButton';
+import { toast, Toaster } from 'react-hot-toast';
+import { useTheme } from '@/context/ThemeContext';
+import { confirmDialog } from '@/lib/confirmDialog';
 
 interface FileData {
   _id: string;
@@ -18,13 +22,16 @@ interface FileData {
 }
 
 export default function AdminFiles() {
-  // const { data: session, status } = useSession();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [files, setFiles] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>('');
   const [previewFile, setPreviewFile] = useState<FileData | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const isMounted = useRef(false);
@@ -35,11 +42,6 @@ export default function AdminFiles() {
       fetchFiles();
       isMounted.current = true;
     }
-    
-    // Cleanup function
-    return () => {
-      // No cleanup needed, but keeping the useEffect format consistent
-    };
   }, []);
 
   async function fetchFiles() {
@@ -50,11 +52,11 @@ export default function AdminFiles() {
         const data = await res.json();
         setFiles(data);
       } else {
-        setMessage({ text: 'Failed to load files', type: 'error' });
+        toast.error('Failed to load files');
       }
     } catch (error) {
       console.error('Error fetching files:', error);
-      setMessage({ text: 'Error loading files', type: 'error' });
+      toast.error('Error loading files');
     } finally {
       setLoading(false);
     }
@@ -67,7 +69,6 @@ export default function AdminFiles() {
     const file = fileList[0];
     setUploading(true);
     setUploadProgress(0);
-    setMessage({ text: '', type: '' });
     
     try {
       // Create form data
@@ -87,17 +88,17 @@ export default function AdminFiles() {
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           fetchFiles();
-          setMessage({ text: 'File uploaded successfully', type: 'success' });
+          toast.success('File uploaded successfully');
         } else {
           console.error('Upload failed');
-          setMessage({ text: 'Failed to upload file', type: 'error' });
+          toast.error('Failed to upload file');
         }
         setUploading(false);
       });
       
       xhr.addEventListener('error', () => {
         console.error('Upload failed');
-        setMessage({ text: 'Error uploading file', type: 'error' });
+        toast.error('Error uploading file');
         setUploading(false);
       });
       
@@ -106,18 +107,17 @@ export default function AdminFiles() {
       
     } catch (error) {
       console.error('Error uploading file:', error);
-      setMessage({ text: 'Error uploading file', type: 'error' });
+      toast.error('Error uploading file');
       setUploading(false);
     }
   }
 
   async function handleDeleteFile(id: string) {
-    if (!confirm('Are you sure you want to delete this file?')) return;
+    if (!await confirmDialog('Are you sure you want to delete this file?')) return;
     
     try {
-      setMessage({ text: 'Deleting file...', type: 'info' });
+      toast.loading('Deleting file...');
       
-      // Use a direct fetch with the DELETE method
       const res = await fetch(`/api/files/${id}`, {
         method: 'DELETE',
       });
@@ -125,15 +125,93 @@ export default function AdminFiles() {
       if (res.ok) {
         // Remove the file from the local state immediately
         setFiles(files.filter(file => file._id !== id));
-        setMessage({ text: 'File deleted successfully', type: 'success' });
+        toast.dismiss();
+        toast.success('File deleted successfully');
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Failed to delete file:', errorData);
-        setMessage({ text: `Failed to delete file: ${errorData.error || res.statusText}`, type: 'error' });
+        toast.dismiss();
+        toast.error(`Failed to delete file: ${errorData.error || res.statusText}`);
       }
     } catch (error) {
       console.error('Error deleting file:', error);
-      setMessage({ text: 'Error deleting file', type: 'error' });
+      toast.dismiss();
+      toast.error('Error deleting file');
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedFiles.length === 0) return;
+    
+    if (!await confirmDialog(`Are you sure you want to delete ${selectedFiles.length} selected files?`)) return;
+    
+    toast.loading(`Deleting ${selectedFiles.length} files...`);
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Create an array of promises for each delete operation
+    const deletePromises = selectedFiles.map(async (fileId) => {
+      try {
+        const res = await fetch(`/api/files/${fileId}`, {
+          method: 'DELETE',
+        });
+        
+        if (res.ok) {
+          successCount++;
+          return { success: true, id: fileId };
+        } else {
+          errorCount++;
+          return { success: false, id: fileId };
+        }
+      } catch (error) {
+        console.error(`Error deleting file ${fileId}:`, error);
+        errorCount++;
+        return { success: false, id: fileId };
+      }
+    });
+    
+    // Wait for all delete operations to complete
+    const results = await Promise.all(deletePromises);
+    
+    // Remove the successfully deleted files from the local state
+    const successfullyDeletedIds = results
+      .filter(result => result.success)
+      .map(result => result.id);
+    
+    if (successfullyDeletedIds.length > 0) {
+      setFiles(files.filter(file => !successfullyDeletedIds.includes(file._id)));
+    }
+    
+    setSelectedFiles([]);
+    setSelectAll(false);
+    toast.dismiss();
+    
+    if (errorCount === 0) {
+      toast.success(`Successfully deleted ${successCount} files`);
+    } else if (successCount === 0) {
+      toast.error(`Failed to delete ${errorCount} files`);
+    } else {
+      toast.success(`Deleted ${successCount} files, failed to delete ${errorCount} files`);
+    }
+  }
+
+  function handleSelectFile(id: string) {
+    if (selectedFiles.includes(id)) {
+      setSelectedFiles(selectedFiles.filter(fileId => fileId !== id));
+    } else {
+      setSelectedFiles([...selectedFiles, id]);
+    }
+  }
+
+  function handleSelectAll() {
+    const newSelectAll = !selectAll;
+    setSelectAll(newSelectAll);
+    
+    if (newSelectAll) {
+      setSelectedFiles(filteredFiles.map(file => file._id));
+    } else {
+      setSelectedFiles([]);
     }
   }
 
@@ -169,12 +247,29 @@ export default function AdminFiles() {
     }
   }
 
-  const filteredFiles = searchQuery 
-    ? files.filter(file => 
-        file.metadata?.originalName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  // Get unique file types for filtering
+  const fileTypes = Array.from(new Set(files.map(file => {
+    if (!file.contentType) return 'unknown';
+    const type = file.contentType.split('/')[0];
+    return type === 'application' && file.contentType.includes('/') ? file.contentType.split('/')[1] : type;
+  })));
+
+  // Filter files based on search query and file type
+  const filteredFiles = files.filter(file => {
+    // Text search filter
+    const matchesSearch = searchQuery 
+      ? file.metadata?.originalName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         file.contentType?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : files;
+      : true;
+      
+    // File type filter
+    const matchesType = fileTypeFilter 
+      ? file.contentType.startsWith(fileTypeFilter) || 
+        (fileTypeFilter === 'application' && file.contentType.includes('application/'))
+      : true;
+      
+    return matchesSearch && matchesType;
+  });
 
   function openPreview(file: FileData) {
     setPreviewFile(file);
@@ -195,25 +290,20 @@ export default function AdminFiles() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Toaster position="top-right" />
       <BackButton />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">File Management</h1>
       </div>
 
-      {message.text && (
-        <div className={`mb-6 p-4 rounded-md ${
-          message.type === 'success' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'
-        }`}>
-          {message.text}
-        </div>
-      )}
-
       <div className="mb-6">
-        <div className="bg-bg-dark p-6 rounded-lg border border-osc-blue border-opacity-20">
+        <div className={`p-6 rounded-lg border ${
+          isDark ? 'bg-bg-dark border-osc-blue/20' : 'bg-white border-gray-200'
+        }`}>
           <h2 className="text-lg font-medium mb-4">Upload New File</h2>
           
           {uploading ? (
-            <div className="w-full bg-bg-darker rounded-lg overflow-hidden">
+            <div className={`w-full ${isDark ? 'bg-bg-darker' : 'bg-gray-100'} rounded-lg overflow-hidden`}>
               <div 
                 className="bg-osc-blue h-2 transition-all"
                 style={{ width: `${uploadProgress}%` }}
@@ -221,13 +311,17 @@ export default function AdminFiles() {
               <p className="text-xs mt-1 text-center">{uploadProgress}% Uploaded</p>
             </div>
           ) : (
-            <label className="flex items-center justify-center w-full p-8 bg-bg-darker bg-opacity-50 border border-dashed border-osc-blue border-opacity-50 rounded-lg cursor-pointer hover:bg-opacity-70 transition-all">
+            <label className={`flex items-center justify-center w-full p-8 rounded-lg cursor-pointer transition-all
+              ${isDark 
+                ? 'bg-bg-darker border border-dashed border-osc-blue/50 hover:bg-opacity-70' 
+                : 'bg-gray-50 border border-dashed border-osc-blue/30 hover:bg-gray-100'
+              }`}>
               <div className="text-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto mb-2 text-osc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="text-lg">Click to select a file</p>
-                <p className="text-sm text-text-muted mt-1">or drag and drop</p>
+                <p className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>or drag and drop</p>
               </div>
               <input 
                 type="file" 
@@ -239,151 +333,234 @@ export default function AdminFiles() {
         </div>
       </div>
 
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search files..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 bg-bg-dark border border-osc-blue border-opacity-20 rounded-md"
-        />
+      <div className="mb-6 flex flex-col md:flex-row gap-4">
+        <div className="md:flex-1">
+          <input
+            type="text"
+            placeholder="Search files..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`w-full px-4 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-dark border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
+          />
+        </div>
+        
+        <div className="md:w-48">
+          <select
+            value={fileTypeFilter}
+            onChange={(e) => setFileTypeFilter(e.target.value)}
+            className={`w-full px-4 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-dark border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
+          >
+            <option value="">All File Types</option>
+            {fileTypes.map(type => (
+              <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+            ))}
+          </select>
+        </div>
+
+        {selectedFiles.length > 0 && (
+          <div>
+            <AdminButton
+              type="danger"
+              onClick={handleBulkDelete}
+            >
+              Delete Selected ({selectedFiles.length})
+            </AdminButton>
+          </div>
+        )}
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-pulse h-8 w-8 bg-osc-blue rounded-full"></div>
+        <div className="flex justify-center py-12">
+          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${
+            isDark ? 'border-osc-blue' : 'border-osc-blue'
+          }`}></div>
+        </div>
+      ) : filteredFiles.length === 0 ? (
+        <div className={`text-center py-12 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+          <p>No files found</p>
         </div>
       ) : (
-        <div className="bg-bg-dark rounded-lg overflow-hidden">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-bg-darker">
-                <th className="py-3 px-4 text-left">File</th>
-                <th className="py-3 px-4 text-left">Type</th>
-                <th className="py-3 px-4 text-left">Size</th>
-                <th className="py-3 px-4 text-left">Uploaded</th>
-                <th className="py-3 px-4 text-left">Actions</th>
+        <div className={`overflow-x-auto border rounded-lg ${isDark ? 'border-osc-blue/20' : 'border-gray-200'}`}>
+          <table className={`min-w-full divide-y ${isDark ? 'divide-osc-blue/20' : 'divide-gray-200'}`}>
+            <thead className={isDark ? 'bg-bg-dark' : 'bg-gray-50'}>
+              <tr>
+                <th scope="col" className="py-3 px-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-osc-blue focus:ring-osc-blue/30"
+                    />
+                  </div>
+                </th>
+                <th scope="col" className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">
+                  File
+                </th>
+                <th scope="col" className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">
+                  Type
+                </th>
+                <th scope="col" className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">
+                  Size
+                </th>
+                <th scope="col" className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">
+                  Uploaded
+                </th>
+                <th scope="col" className="py-3 px-4 text-left text-xs font-medium uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody>
-              {filteredFiles.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-4 text-center text-text-muted">
-                    {searchQuery ? 'No files match your search' : 'No files uploaded yet'}
+            <tbody className={`divide-y ${isDark ? 'divide-osc-blue/10' : 'divide-gray-200'}`}>
+              {filteredFiles.map((file) => (
+                <tr key={file._id} 
+                  className={`
+                    ${selectedFiles.includes(file._id) 
+                      ? isDark ? 'bg-osc-blue/20' : 'bg-osc-blue/10' 
+                      : isDark ? 'bg-bg-darker' : 'bg-white'
+                    }
+                    hover:bg-opacity-90 transition-colors
+                  `}
+                >
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.includes(file._id)}
+                        onChange={() => handleSelectFile(file._id)}
+                        className="h-4 w-4 rounded border-gray-300 text-osc-blue focus:ring-osc-blue/30"
+                      />
+                    </div>
                   </td>
-                </tr>
-              ) : (
-                filteredFiles.map((file) => (
-                  <motion.tr 
-                    key={file._id}
-                    className="border-t border-osc-blue border-opacity-10"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center">
-                        <span className="text-xl mr-2">{getFileIcon(file.contentType)}</span>
-                        <span className="truncate max-w-xs">{file.metadata?.originalName || file.filename}</span>
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <span className="mr-2 text-lg">{getFileIcon(file.contentType)}</span>
+                      <div className="ml-2">
+                        <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {file.metadata?.originalName || file.filename}
+                        </div>
+                        <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          ID: {file._id}
+                        </div>
                       </div>
-                    </td>
-                    <td className="py-3 px-4 text-text-muted">{file.contentType}</td>
-                    <td className="py-3 px-4 text-text-muted">{formatFileSize(file.size)}</td>
-                    <td className="py-3 px-4 text-text-muted">
-                      {new Date(file.uploadDate).toLocaleString()}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex space-x-2">
-                        <button 
+                    </div>
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      isDark 
+                        ? 'bg-osc-blue/10 text-osc-blue' 
+                        : 'bg-osc-blue/10 text-osc-blue'
+                    }`}>
+                      {file.contentType}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap text-sm">
+                    {formatFileSize(file.size)}
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap text-sm">
+                    {new Date(file.uploadDate).toLocaleDateString()}
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap text-sm">
+                    <div className="flex space-x-2">
+                      <a 
+                        href={`/api/files/${file._id}/${encodeURIComponent(file.metadata?.originalName || file.filename)}`}
+                        download={file.metadata?.originalName || file.filename}
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          isDark 
+                            ? 'bg-osc-blue/10 text-osc-blue hover:bg-osc-blue/20' 
+                            : 'bg-osc-blue/10 text-osc-blue hover:bg-osc-blue/20'
+                        }`}
+                      >
+                        Download
+                      </a>
+                      
+                      {canPreviewFile(file.contentType) && (
+                        <button
+                          type="button"
                           onClick={() => openPreview(file)}
-                          className="text-osc-blue hover:underline"
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            isDark 
+                              ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
                         >
                           Preview
                         </button>
-                        <button
-                          onClick={() => handleDeleteFile(file._id)}
-                          className="text-red-400 hover:underline"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
+                      )}
+                      
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFile(file._id)}
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          isDark 
+                            ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' 
+                            : 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
+                        }`}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       )}
 
+      {/* File Preview Modal */}
       {isPreviewOpen && previewFile && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-dark rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b border-osc-blue border-opacity-20">
-              <h3 className="text-lg font-medium">
-                {previewFile.metadata?.originalName || previewFile.filename}
-              </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`max-w-3xl max-h-[90vh] w-full rounded-lg ${isDark ? 'bg-bg-dark' : 'bg-white'} flex flex-col overflow-hidden`}>
+            <div className={`p-4 flex justify-between items-center border-b ${isDark ? 'border-osc-blue/20' : 'border-gray-200'}`}>
+              <h3 className="text-lg font-medium">{previewFile.metadata?.originalName || previewFile.filename}</h3>
               <button 
                 onClick={closePreview}
-                className="text-text-muted hover:text-white"
+                className={`text-2xl leading-none ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
+                &times;
               </button>
             </div>
             
-            <div className="p-4 flex-grow overflow-auto">
-              {previewFile.metadata?.contentType?.startsWith('image/') ? (
-                <div className="flex justify-center">
+            <div className="flex-grow overflow-auto p-4">
+              {previewFile.contentType.startsWith('image/') ? (
+                <div className="flex items-center justify-center h-full">
                   <img 
-                    src={`/api/files/${previewFile._id}/${previewFile.filename}`} 
+                    src={`/api/files/${previewFile._id}/${encodeURIComponent(previewFile.metadata?.originalName || previewFile.filename)}`} 
                     alt={previewFile.metadata?.originalName || previewFile.filename}
                     className="max-w-full max-h-[70vh] object-contain"
                   />
                 </div>
-              ) : previewFile.metadata?.contentType?.includes('pdf') ? (
-                <object 
-                  data={`/api/files/${previewFile._id}/${previewFile.filename}`}
-                  type="application/pdf" 
-                  className="w-full h-[70vh]"
-                >
-                  <div className="text-center py-10">
-                    <p className="mb-2">Unable to display PDF directly.</p>
-                    <a 
-                      href={`/api/files/${previewFile._id}/${previewFile.filename}?download=true`}
-                      className="px-4 py-2 bg-osc-blue text-white rounded-md hover:bg-opacity-90"
-                      download
-                    >
-                      Download PDF
-                    </a>
-                  </div>
-                </object>
-              ) : previewFile.metadata?.contentType?.includes('text/') ? (
-                <iframe 
-                  src={`/api/files/${previewFile._id}/${previewFile.filename}`}
-                  className="w-full h-[70vh] bg-white text-black p-4"
-                  title={previewFile.metadata?.originalName || previewFile.filename}
-                ></iframe>
               ) : (
-                <div className="text-center py-10">
-                  <div className="text-3xl mb-4">{getFileIcon(previewFile.metadata?.contentType)}</div>
-                  <p className="mb-2">Preview not available for this file type.</p>
-                  <p className="text-text-muted text-sm">File type: {previewFile.metadata?.contentType || 'Unknown'}</p>
+                <div className={`h-full flex items-center justify-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p>Preview not available. Please download the file to view it.</p>
                 </div>
               )}
             </div>
             
-            <div className="p-4 border-t border-osc-blue border-opacity-20">
-              <div className="flex justify-end">
-                <a 
-                  href={`/api/files/${previewFile._id}/${previewFile.filename}?download=true`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-osc-blue text-white rounded-md hover:bg-opacity-90"
-                >
-                  Download
-                </a>
-              </div>
+            <div className={`p-4 border-t ${isDark ? 'border-osc-blue/20' : 'border-gray-200'} flex justify-end`}>
+              <a 
+                href={`/api/files/${previewFile._id}/${encodeURIComponent(previewFile.metadata?.originalName || previewFile.filename)}`}
+                download={previewFile.metadata?.originalName || previewFile.filename}
+                className={`px-4 py-2 rounded text-sm font-medium ${
+                  isDark 
+                    ? 'bg-osc-blue/10 text-osc-blue hover:bg-osc-blue/20' 
+                    : 'bg-osc-blue/10 text-osc-blue hover:bg-osc-blue/20'
+                }`}
+              >
+                Download
+              </a>
             </div>
           </div>
         </div>

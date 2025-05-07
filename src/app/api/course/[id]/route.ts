@@ -9,7 +9,8 @@ export async function GET(
 ) {
   try {
     await dbConnect();
-    const course = await Course.findById(params.id);
+    const { id } = await params;
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -33,12 +34,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const data = await request.json();
     await dbConnect();
+    const { id } = await params;
+    const body = await request.json();
     
     const course = await Course.findByIdAndUpdate(
-      params.id,
-      data,
+      id,
+      body,
       { new: true, runValidators: true }
     );
     
@@ -65,7 +67,9 @@ export async function DELETE(
 ) {
   try {
     await dbConnect();
-    const course = await Course.findByIdAndDelete(params.id);
+    const { id } = await params;
+    
+    const course = await Course.findByIdAndDelete(id);
     
     if (!course) {
       return NextResponse.json(
@@ -74,7 +78,7 @@ export async function DELETE(
       );
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: 'Course deleted successfully' });
   } catch (error) {
     console.error('Error deleting course:', error);
     return NextResponse.json(

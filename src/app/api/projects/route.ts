@@ -6,24 +6,53 @@ import Project from '@/models/Project';
 export async function GET() {
   try {
     await dbConnect();
-    const projects = await Project.find({}).sort({ order: 1, createdAt: -1 }).lean();
-    
+    const projects = await Project.find().sort({ order: 1 });
     return NextResponse.json(projects);
   } catch (error) {
     console.error('Error fetching projects:', error);
-    return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch projects' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const body = await request.json();
     await dbConnect();
-    const data = await request.json();
-    const project = await Project.create(data);
+    
+    // Ensure all required fields are provided
+    if (!body.title || !body.category) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+    
+    const project = await Project.create({
+      title: body.title,
+      description: body.description,
+      category: body.category,
+      imageUrl: body.imageUrl, // Handle the imageUrl field
+      highlights: body.highlights || [],
+      order: body.order || 0,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      fundingAgency: body.fundingAgency,
+      fundingAmount: body.fundingAmount,
+      url: body.url,
+      status: body.status || 'ongoing',
+      tags: body.tags || []
+    });
+    
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error('Error creating project:', error);
-    return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create project' },
+      { status: 500 }
+    );
   }
 }
 

@@ -18,10 +18,19 @@ const CourseSchema = new Schema({
   },
   semester: {
     type: String,
-    enum: ['Fall', 'Spring', 'Summer'],
+    enum: ['Fall', 'Spring', 'Summer', 'Winter'],
     required: true
   },
   year: Number,
+  credits: {
+    type: Number,
+    default: 3
+  },
+  syllabus: String,
+  imageUrl: {
+    type: String,
+    default: ''
+  },
   highlights: [String],
   order: {
     type: Number,

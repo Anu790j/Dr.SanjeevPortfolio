@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import BackButton from '@/components/admin/BackButton';
+import { toast, Toaster } from 'react-hot-toast';
+import { AdminButton } from '@/components/ui/AdminButton';
+import { FileUpload } from '@/components/ui/FileUpload';
+import { useTheme } from '@/context/ThemeContext';
 
 interface Project {
   _id: string;
@@ -18,6 +22,7 @@ interface Project {
   order: number;
   tags?: string[];
   url?: string;
+  category: string;
 }
 
 export default function AdminProjects() {
@@ -25,13 +30,16 @@ export default function AdminProjects() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   
   const emptyProject: Omit<Project, '_id'> = {
     title: '',
     description: '',
     status: 'ongoing',
     order: 0,
-    tags: []
+    tags: [],
+    category: 'research'
   };
 
   useEffect(() => {
@@ -48,6 +56,7 @@ export default function AdminProjects() {
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
+      toast.error("Failed to load projects");
     } finally {
       setLoading(false);
     }
@@ -72,12 +81,17 @@ export default function AdminProjects() {
       });
 
       if (res.ok) {
+        toast.success(currentProject._id ? 'Project updated successfully' : 'Project created successfully');
         fetchProjects();
         setIsEditing(false);
         setCurrentProject(null);
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.error || 'Failed to save project');
       }
     } catch (error) {
       console.error('Error saving project:', error);
+      toast.error('Error saving project');
     }
   }
 
@@ -90,10 +104,14 @@ export default function AdminProjects() {
       });
 
       if (res.ok) {
+        toast.success('Project deleted successfully');
         fetchProjects();
+      } else {
+        toast.error('Failed to delete project');
       }
     } catch (error) {
       console.error('Error deleting project:', error);
+      toast.error('Error deleting project');
     }
   }
 
@@ -109,15 +127,17 @@ export default function AdminProjects() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Toaster position="top-right" />
       <BackButton />
       <h1 className="text-2xl font-bold mb-6">Projects Management</h1>
       <div className="flex justify-between items-center mb-6">
-        <button
+        <AdminButton
+          type="primary"
           onClick={addNewProject}
-          className="px-4 py-2 bg-osc-blue text-white rounded-md hover:bg-opacity-90"
+          className={`${isDark ? '' : 'bg-osc-blue text-white'}`}
         >
           Add New Project
-        </button>
+        </AdminButton>
       </div>
 
       {loading ? (
@@ -142,7 +162,11 @@ export default function AdminProjects() {
             projects.map((project) => (
               <motion.div
                 key={project._id}
-                className="p-4 bg-bg-dark rounded-lg border border-osc-blue border-opacity-20"
+                className={`p-4 rounded-lg border ${
+                  isDark 
+                    ? 'bg-bg-dark border-osc-blue/20' 
+                    : 'bg-white border-gray-200'
+                }`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
               >
@@ -167,7 +191,11 @@ export default function AdminProjects() {
                         {project.tags.map((tag, i) => (
                           <span 
                             key={i} 
-                            className="text-xs bg-osc-blue bg-opacity-10 text-osc-blue px-2 py-0.5 rounded"
+                            className={`text-xs px-2 py-0.5 rounded ${
+                              isDark
+                                ? 'bg-osc-blue/10 text-osc-blue' 
+                                : 'bg-osc-blue/10 text-osc-blue'
+                            }`}
                           >
                             {tag}
                           </span>
@@ -176,18 +204,18 @@ export default function AdminProjects() {
                     )}
                   </div>
                   <div className="flex space-x-2 ml-4">
-                    <button
+                    <AdminButton
+                      type="warning"
                       onClick={() => editProject(project)}
-                      className="px-3 py-1 text-sm bg-opacity-20 bg-comp-gold text-comp-gold rounded hover:bg-opacity-30"
                     >
                       Edit
-                    </button>
-                    <button
+                    </AdminButton>
+                    <AdminButton
+                      type="danger"
                       onClick={() => handleDelete(project._id)}
-                      className="px-3 py-1 text-sm bg-opacity-20 bg-red-500 text-red-500 rounded hover:bg-opacity-30"
                     >
                       Delete
-                    </button>
+                    </AdminButton>
                   </div>
                 </div>
               </motion.div>
@@ -208,6 +236,8 @@ interface ProjectFormProps {
 
 function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormProps) {
   const [tagInput, setTagInput] = useState('');
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target;
@@ -217,18 +247,30 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
     });
   }
 
+  function handleImageUploaded(fileId: string) {
+    setProject({
+      ...project,
+      imageUrl: fileId
+    });
+  }
+
   function handleTagAdd() {
     if (!tagInput.trim()) return;
     
+    // Create a new array if tags is undefined
+    const currentTags = Array.isArray(project.tags) ? [...project.tags] : [];
+    
     setProject({
       ...project,
-      tags: [...(project.tags || []), tagInput.trim()]
+      tags: [...currentTags, tagInput.trim()]
     });
     setTagInput('');
   }
 
   function handleTagRemove(index: number) {
-    const newTags = [...(project.tags || [])];
+    if (!Array.isArray(project.tags)) return;
+    
+    const newTags = [...project.tags];
     newTags.splice(index, 1);
     setProject({
       ...project,
@@ -244,7 +286,9 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
   }
 
   return (
-    <form onSubmit={onSubmit} className="bg-bg-dark p-6 rounded-lg border border-osc-blue border-opacity-20">
+    <form onSubmit={onSubmit} className={`p-6 rounded-lg border ${
+      isDark ? 'bg-bg-dark border-osc-blue/20' : 'bg-white border-gray-200'
+    }`}>
       <div className="mb-4">
         <label className="block mb-1 text-sm">Project Title</label>
         <input
@@ -252,7 +296,11 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
           name="title"
           value={project.title}
           onChange={handleChange}
-          className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+          className={`w-full px-3 py-2 rounded-md border ${
+            isDark 
+              ? 'bg-bg-darker border-osc-blue/20 text-white' 
+              : 'bg-white border-gray-300 text-gray-800'
+          }`}
           required
         />
       </div>
@@ -264,7 +312,22 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
           value={project.description}
           onChange={handleChange}
           rows={4}
-          className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+          className={`w-full px-3 py-2 rounded-md border ${
+            isDark 
+              ? 'bg-bg-darker border-osc-blue/20 text-white' 
+              : 'bg-white border-gray-300 text-gray-800'
+          }`}
+        />
+      </div>
+
+      <div className="mb-6">
+        <label className="block mb-1 text-sm">Project Image</label>
+        <FileUpload
+          currentFileId={project.imageUrl}
+          previewUrl={project.imageUrl ? `/api/files/${project.imageUrl}` : undefined}
+          onFileUploaded={handleImageUploaded}
+          label="Upload Image"
+          accept="image/*"
         />
       </div>
 
@@ -276,7 +339,11 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
             name="startDate"
             value={project.startDate || ''}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+            className={`w-full px-3 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
           />
         </div>
         <div>
@@ -286,20 +353,13 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
             name="endDate"
             value={project.endDate || ''}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+            className={`w-full px-3 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
           />
         </div>
-      </div>
-
-      <div className="mb-4">
-        <label className="block mb-1 text-sm">Image URL</label>
-        <input
-          type="text"
-          name="imageUrl"
-          value={project.imageUrl || ''}
-          onChange={handleChange}
-          className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
-        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -310,7 +370,11 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
             name="fundingAgency"
             value={project.fundingAgency || ''}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+            className={`w-full px-3 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
           />
         </div>
         <div>
@@ -320,7 +384,11 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
             name="fundingAmount"
             value={project.fundingAmount || ''}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+            className={`w-full px-3 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
           />
         </div>
       </div>
@@ -332,7 +400,11 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
           name="url"
           value={project.url || ''}
           onChange={handleChange}
-          className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+          className={`w-full px-3 py-2 rounded-md border ${
+            isDark 
+              ? 'bg-bg-darker border-osc-blue/20 text-white' 
+              : 'bg-white border-gray-300 text-gray-800'
+          }`}
         />
       </div>
 
@@ -343,7 +415,11 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
             name="status"
             value={project.status}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
+            className={`w-full px-3 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
           >
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
@@ -351,15 +427,37 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
           </select>
         </div>
         <div>
-          <label className="block mb-1 text-sm">Display Order</label>
-          <input
-            type="number"
-            name="order"
-            value={project.order}
+          <label className="block mb-1 text-sm">Category</label>
+          <select
+            name="category"
+            value={project.category || 'research'}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-md"
-          />
+            className={`w-full px-3 py-2 rounded-md border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
+            required
+          >
+            <option value="research">Research</option>
+            <option value="lab">Lab</option>
+          </select>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="block mb-1 text-sm">Display Order</label>
+        <input
+          type="number"
+          name="order"
+          value={project.order}
+          onChange={handleChange}
+          className={`w-full px-3 py-2 rounded-md border ${
+            isDark 
+              ? 'bg-bg-darker border-osc-blue/20 text-white' 
+              : 'bg-white border-gray-300 text-gray-800'
+          }`}
+        />
       </div>
 
       <div className="mb-4">
@@ -370,16 +468,20 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={handleTagKeyDown}
-            className="flex-grow px-3 py-2 bg-bg-darker border border-osc-blue border-opacity-20 rounded-l-md"
+            className={`flex-grow px-3 py-2 rounded-l-md border ${
+              isDark 
+                ? 'bg-bg-darker border-osc-blue/20 text-white' 
+                : 'bg-white border-gray-300 text-gray-800'
+            }`}
             placeholder="Add a tag and press Enter"
           />
-          <button
-            type="button"
+          <AdminButton
+            type="primary" 
             onClick={handleTagAdd}
-            className="px-3 py-2 bg-osc-blue text-white rounded-r-md"
+            className="rounded-l-none"
           >
             Add
-          </button>
+          </AdminButton>
         </div>
         
         {project.tags && project.tags.length > 0 && (
@@ -387,7 +489,11 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
             {project.tags.map((tag, i) => (
               <div 
                 key={i} 
-                className="flex items-center bg-osc-blue bg-opacity-10 text-osc-blue px-2 py-1 rounded"
+                className={`flex items-center px-2 py-1 rounded ${
+                  isDark
+                    ? 'bg-osc-blue/10 text-osc-blue' 
+                    : 'bg-osc-blue/10 text-osc-blue'
+                }`}
               >
                 <span className="text-sm">{tag}</span>
                 <button
@@ -404,19 +510,18 @@ function ProjectForm({ project, setProject, onSubmit, onCancel }: ProjectFormPro
       </div>
 
       <div className="flex justify-end space-x-4 mt-6">
-        <button
-          type="button"
+        <AdminButton
+          type="secondary"
           onClick={onCancel}
-          className="px-4 py-2 border border-osc-blue text-osc-blue rounded-md hover:bg-osc-blue hover:bg-opacity-10"
         >
           Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-osc-blue text-white rounded-md hover:bg-opacity-90"
+        </AdminButton>
+        <AdminButton
+          type="primary"
+          buttonType="submit"
         >
           Save Project
-        </button>
+        </AdminButton>
       </div>
     </form>
   );

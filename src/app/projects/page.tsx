@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { useTheme } from '@/context/ThemeContext';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
+import { Footer } from '@/components/layout/Footer';
 
 interface Project {
   _id: string;
@@ -311,6 +312,7 @@ export default function ProjectsPage() {
           </main>
         )}
       </div>
+      <Footer />
     </>
   );
 }

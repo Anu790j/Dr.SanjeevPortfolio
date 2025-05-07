@@ -6,7 +6,8 @@ import Publication from '@/models/Publication';
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     await dbConnect();
-    const publication = await Publication.findById(params.id).lean();
+    const { id } = await params;
+    const publication = await Publication.findById(id).lean();
     
     if (!publication) {
       return NextResponse.json({ error: 'Publication not found' }, { status: 404 });
@@ -21,10 +22,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    const data = await request.json();
     await dbConnect();
+    const { id } = await params;
+    const body = await request.json();
     
-    const publication = await Publication.findByIdAndUpdate(params.id, data, { new: true });
+    const publication = await Publication.findByIdAndUpdate(
+      id,
+      body,
+      { new: true, runValidators: true }
+    );
     
     if (!publication) {
       return NextResponse.json({ error: 'Publication not found' }, { status: 404 });
@@ -40,14 +46,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     await dbConnect();
+    const { id } = await params;
     
-    const publication = await Publication.findByIdAndDelete(params.id);
+    const publication = await Publication.findByIdAndDelete(id);
     
     if (!publication) {
       return NextResponse.json({ error: 'Publication not found' }, { status: 404 });
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: 'Publication deleted successfully' });
   } catch (error) {
     console.error('Error deleting publication:', error);
     return NextResponse.json({ error: 'Failed to delete publication' }, { status: 500 });

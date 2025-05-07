@@ -9,7 +9,8 @@ export async function GET(
 ) {
   try {
     await dbConnect();
-    const project = await Project.findById(params.id);
+    const { id } = await params;
+    const project = await Project.findById(id);
     
     if (!project) {
       return NextResponse.json(
@@ -33,12 +34,36 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const data = await request.json();
     await dbConnect();
+    const { id } = await params;
+    const body = await request.json();
     
+    // Add validation if needed
+    if (!body.title || !body.category) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+    
+    // Find the project and update all fields
     const project = await Project.findByIdAndUpdate(
-      params.id,
-      data,
+      id,
+      {
+        title: body.title,
+        description: body.description,
+        category: body.category,
+        imageUrl: body.imageUrl,
+        highlights: body.highlights || [],
+        order: body.order || 0,
+        startDate: body.startDate,
+        endDate: body.endDate,
+        fundingAgency: body.fundingAgency,
+        fundingAmount: body.fundingAmount,
+        url: body.url,
+        status: body.status || 'ongoing',
+        tags: body.tags || []
+      },
       { new: true, runValidators: true }
     );
     
@@ -65,7 +90,9 @@ export async function DELETE(
 ) {
   try {
     await dbConnect();
-    const project = await Project.findByIdAndDelete(params.id);
+    const { id } = await params;
+    
+    const project = await Project.findByIdAndDelete(id);
     
     if (!project) {
       return NextResponse.json(
@@ -74,7 +101,7 @@ export async function DELETE(
       );
     }
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ message: 'Project deleted successfully' });
   } catch (error) {
     console.error('Error deleting project:', error);
     return NextResponse.json(

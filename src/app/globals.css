@@ -7,26 +7,41 @@
 /* Base styles */
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-rgb: 26, 44, 66;  /* Lighter dark background (was 5, 16, 20) */
-  --background: #1a2c42;         /* Lighter dark background (was #051014) */
-  --foreground: #ffffff;         /* Pure white for better readability (was #ededed) */
+  --background-rgb: 26, 44, 66;  /* Darker background for dark mode */
+  --background: #1a2c42;
+  --foreground: #ffffff;
+  --osc-blue: 0, 98, 155;
+  --comp-gold: 177, 142, 91;
+  --text-color: 255, 255, 255;
+  --text-muted: 156, 163, 175;
+  --bg-light: 255, 255, 255;
+  --bg-dark: 26, 44, 66;
+  --bg-darker: 16, 24, 39;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   
   /* Light mode variables */
-  --light-foreground-rgb: 51, 65, 85;  /* Darker text for better contrast (was 10, 25, 47) */
-  --light-background-rgb: 248, 250, 252;
+  --light-foreground-rgb: 51, 65, 85;
+  --light-background-rgb: 240, 240, 240; /* Light grey background */
   
   /* Theme-specific colors */
   --osc-blue: #38BDF8; 
   --comp-gold: #F59E0B;
-  --text-muted: #CBD5E1;         /* Lighter muted text (was #94A3B8) */
-  --bg-dark: #1E3A59;            /* Lighter dark background (was #0F172A) */
+  --text-muted: #CBD5E1;
+  --bg-dark: #1E3A59;
   
-  --light-osc-blue: #0369A1;     /* Darker blue for light mode (was #0284C7) */
-  --light-comp-gold: #B45309;    /* Darker gold for light mode (was #D97706) */
+  --light-osc-blue: #0369A1;
+  --light-comp-gold: #B45309;
   --light-text-muted: #64748B;
   --light-bg-dark: #E2E8F0;
+
+  --toast-bg: #ffffff;
+  --toast-color: #333333;
+}
+
+.dark {
+  --toast-bg: #1e1e2f;
+  --toast-color: #ffffff;
 }
 
 body {
@@ -416,4 +431,20 @@ body {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Page transition overlay effect */
+#page-transition-overlay {
+  transition: opacity 300ms ease-in-out;
+}
+
+#page-transition-overlay.active {
+  opacity: 0.3;
+  pointer-events: all;
 }

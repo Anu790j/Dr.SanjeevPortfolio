@@ -3,18 +3,24 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/context/ThemeContext';
+import { useRouter, usePathname } from 'next/navigation';
+import { applyPageTransition } from '@/lib/pageTransition';
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
   
   const navItems = [
     { name: 'Home', path: '/' },
+    { name: 'About', path: '/about' },
     { name: 'Research', path: '/research' },
     { name: 'Projects', path: '/projects' },
+    { name: 'Students', path: '/students' },
     { name: 'Teaching', path: '/teaching' },
     { name: 'Contact', path: '/contact' }
   ];
@@ -28,7 +34,41 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Initialize page transition
+  useEffect(() => {
+    const transition = applyPageTransition();
+    return () => {
+      // Cleanup if needed
+    };
+  }, []);
+
   const isDark = theme === 'dark';
+
+  // Custom navigation handler with transition
+  const handleNavigation = useCallback((path: string) => {
+    // Skip if already on the page
+    if (pathname === path) return;
+    
+    // Get transition handlers
+    const overlay = document.getElementById('page-transition-overlay');
+    if (overlay) {
+      // Start transition
+      overlay.classList.add('active');
+      
+      // Navigate after a brief delay
+      setTimeout(() => {
+        router.push(path);
+        
+        // End transition after navigation
+        setTimeout(() => {
+          overlay.classList.remove('active');
+        }, 300);
+      }, 150);
+    } else {
+      // Fallback if overlay doesn't exist
+      router.push(path);
+    }
+  }, [router, pathname]);
 
   return (
     <header className={`
@@ -38,7 +78,14 @@ export function Header() {
         : 'py-5'}
     `}>
       <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link href="/" className="flex items-center">
+        <Link 
+          href="/" 
+          onClick={(e) => { 
+            e.preventDefault(); 
+            handleNavigation('/'); 
+          }}
+          className="flex items-center"
+        >
           <div className="w-10 h-10 mr-3 relative">
             {/* Simplified logo */}
             <div className={`absolute inset-0 rounded-full border-2 ${isDark ? 'border-circuit-copper' : 'border-osc-blue'}`}></div>
@@ -59,13 +106,13 @@ export function Header() {
           {/* Theme toggle for mobile */}
           <button 
             onClick={toggleTheme}
-            className={`flex items-center justify-center w-8 h-8 rounded-full border ${isDark ? 'border-circuit-copper bg-circuit-dark/70' : 'border-osc-blue bg-bg-light'}`}
+            className="flex items-center justify-center w-10 h-10 rounded-full"
             aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
           >
             {isDark ? (
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                width="16" height="16" 
+                width="20" height="20" 
                 viewBox="0 0 24 24" 
                 fill="none" 
                 stroke="currentColor" 
@@ -87,7 +134,7 @@ export function Header() {
             ) : (
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                width="16" height="16" 
+                width="20" height="20" 
                 viewBox="0 0 24 24" 
                 fill="none" 
                 stroke="currentColor" 
@@ -136,6 +183,10 @@ export function Header() {
             >
               <Link 
                 href={item.path}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  handleNavigation(item.path); 
+                }}
                 className={`${isDark ? 'text-white hover:text-circuit-light-blue' : 'text-text-primary hover:text-osc-blue'} relative group font-medium`}
               >
                 <span>{item.name}</span>
@@ -199,8 +250,12 @@ export function Header() {
               <Link 
                 key={item.path}
                 href={item.path}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  handleNavigation(item.path);
+                  setIsMenuOpen(false);
+                }}
                 className={`text-2xl ${isDark ? 'text-white hover:text-circuit-light-blue' : 'text-text-primary hover:text-osc-blue'} relative group font-medium`}
-                onClick={() => setIsMenuOpen(false)}
               >
                 <span>{item.name}</span>
                 <span className={`absolute -bottom-2 left-0 w-0 h-px ${isDark ? 'bg-circuit-copper' : 'bg-osc-blue'} transition-all duration-300 group-hover:w-full`}></span>
