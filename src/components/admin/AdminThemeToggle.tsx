@@ -11,6 +11,7 @@ export const AdminThemeToggle = () => {
       onClick={toggleTheme}
       className="flex items-center justify-center w-9 h-9 rounded-lg bg-osc-blue bg-opacity-10 text-osc-blue hover:bg-opacity-20 transition-all"
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      suppressHydrationWarning
     >
       {theme === 'dark' ? (
         <motion.svg 

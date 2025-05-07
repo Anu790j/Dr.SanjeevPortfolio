@@ -44,7 +44,7 @@ export default function Login() {
         <p className={`text-sm ${isDark ? 'text-text-muted' : 'text-text-secondary'}`}>
           Enter your credentials to access the admin panel
         </p>
-        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit} suppressHydrationWarning>
           {error && (
             <div className={`p-3 border rounded-md ${isDark ? 'bg-red-800 bg-opacity-10 border-red-600 text-red-400' : 'bg-red-50 border-red-200 text-red-600'} text-sm`}>
               {error}
@@ -64,6 +64,7 @@ export default function Login() {
                 onChange={(e) => setUsername(e.target.value)}
                 className={`appearance-none rounded-md relative block w-full px-3 py-2 border ${isDark ? 'bg-bg-darker border-gray-700 text-text-light placeholder-gray-500' : 'bg-white border-gray-300 text-text-primary placeholder-gray-400'} focus:outline-none focus:ring-2 focus:ring-osc-blue focus:border-osc-blue transition-colors`}
                 placeholder="Enter your username"
+                suppressHydrationWarning
               />
             </div>
             <div>
@@ -79,6 +80,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 className={`appearance-none rounded-md relative block w-full px-3 py-2 border ${isDark ? 'bg-bg-darker border-gray-700 text-text-light placeholder-gray-500' : 'bg-white border-gray-300 text-text-primary placeholder-gray-400'} focus:outline-none focus:ring-2 focus:ring-osc-blue focus:border-osc-blue transition-colors`}
                 placeholder="Enter your password"
+                suppressHydrationWarning
               />
             </div>
           </div>
@@ -87,6 +89,7 @@ export default function Login() {
             <button
               type="submit"
               className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md ${isDark ? 'text-white' : 'text-text-primary'} bg-comp-gold hover:bg-comp-gold hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-comp-gold transition-colors shadow-md font-bold`}
+              suppressHydrationWarning
             >
               Sign in
             </button>
