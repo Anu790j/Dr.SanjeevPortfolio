@@ -25,6 +25,7 @@ export async function PUT(request: Request) {
     // Make sure to include the profileImage field when updating
     const updateData = {
       name: data.name,
+      hindi_name: data.hindi_name || '',
       title: data.title,
       email: data.email,
       phone: data.phone || '',
@@ -38,6 +39,7 @@ export async function PUT(request: Request) {
       profileImage: data.profileImage || '', // Make sure this exists!
       typeAnimationSequence: data.typeAnimationSequence || []
     };
+    console.log('Update data:', updateData);
     
     // Update the professor document
     const result = await Professor.findOneAndUpdate(
@@ -45,7 +47,7 @@ export async function PUT(request: Request) {
       updateData,
       { new: true, upsert: true, runValidators: true }
     );
-    
+    console.log('Result:', result);
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error updating professor:', error);

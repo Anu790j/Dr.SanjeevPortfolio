@@ -18,10 +18,12 @@ import { ResearchHighlights } from '@/components/home/ResearchHighlights';
 import { AwardsSection } from '@/components/home/AwardsSection';
 import { AboutSection } from '@/components/home/AboutSection';
 import { Footer } from '@/components/layout/Footer';
+import { WaveformDivider } from '@/components/ui/WaveformDivider';
 
 
 interface ProfessorData {
   name: string;
+  hindi_name?: string;
   title: string;
   department?: string;
   university?: string;
@@ -72,6 +74,8 @@ if (parts.length > 1) {
   lastName = lastNameParts.join(" ");
 }
 
+const hindiName = professor?.hindi_name || " डॉ. संजीव मन्हास";
+
   return (
     <>
       <Header />
@@ -89,6 +93,9 @@ if (parts.length > 1) {
                 <div className="flex flex-col md:flex-row md:items-center gap-12 py-16">
                   {/* Text content with enhanced animations */}
                   <div className="md:w-1/2">
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold relative pb-3 inline-block">
+                  {hindiName}
+                  </h2>
                     {/* Animated name with moving line */}
                     <AnimatedName 
                       firstName={firstName} 
@@ -196,7 +203,7 @@ if (parts.length > 1) {
                     </div>
               </div>
             </section>
-            
+          
             {/* Research Highlights Section */}
             <ResearchHighlights />
             

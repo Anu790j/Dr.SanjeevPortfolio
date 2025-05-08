@@ -9,6 +9,7 @@ import BackButton from '@/components/admin/BackButton';
 interface Professor {
   _id?: string;
   name: string;
+  hindi_name: string;
   title: string;
   institution: string;
   department: string;
@@ -37,6 +38,7 @@ interface SocialLink {
 export default function AdminProfile() {
   const [professor, setProfessor] = useState<Professor>({
     name: '',
+    hindi_name: '',
     title: '',
     institution: '',
     department: '',
@@ -75,6 +77,7 @@ export default function AdminProfile() {
         if (data && Object.keys(data).length > 0) {
           setProfessor({
             name: data.name || '',
+            hindi_name: data.hindi_name || '',
             title: data.title || '',
             institution: data.institution || data.university || '',
             department: data.department || '',
@@ -110,7 +113,7 @@ export default function AdminProfile() {
       setSaving(true);
       setMessage({ text: '', type: '' });
       
-      console.log('Saving professor data with image:', professor);
+      console.log('Saving professor data:', professor);
       
       const res = await fetch('/api/professor', {
         method: 'PUT',
@@ -412,6 +415,17 @@ export default function AdminProfile() {
                       onChange={handleChange}
                       className="w-full px-3 py-2.5 bg-bg-darker border-b-2 border-osc-blue/30 rounded-md focus:border-osc-blue focus:outline-none transition-colors"
                       required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm text-text-muted">हिंदी नाम</label>
+                    <input
+                      type="text"
+                      name="hindi_name"
+                      value={professor.hindi_name || ''}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 bg-bg-darker border-b-2 border-osc-blue/30 rounded-md focus:border-osc-blue focus:outline-none transition-colors"
+                      
                     />
                   </div>
                   <div>
