@@ -143,7 +143,7 @@ export default function StudentsPage() {
                     transition={{ duration: 0.3 }}
                   >
                     {filteredStudents.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+                      <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
                         {filteredStudents.map((student, index) => (
                           <StudentCard key={student._id} student={student} index={index} />
                         ))}

@@ -32,11 +32,11 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, index }) => {
   
   return (
     <motion.div
-      className={`rounded-lg p-3 max-w-xs mx-auto backdrop-blur-lg ${
+      className={`w-full aspect-square max-w-[300px] mx-auto rounded-lg p-4 backdrop-blur-lg overflow-hidden ${
         isDark 
           ? 'bg-circuit-dark/60 border border-circuit-light-blue/20' 
           : 'bg-white/70 shadow-md'
-      } transition-all`}
+      } transition-all flex flex-col justify-between`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -91,6 +91,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, index }) => {
               Research Area: {student.researchArea}
             </p>
           )}
+          
           
           {student.description && student.description.length > 0 && (
             <p className={`mt-2 text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
