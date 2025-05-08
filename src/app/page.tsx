@@ -19,6 +19,7 @@ import { AwardsSection } from '@/components/home/AwardsSection';
 import { AboutSection } from '@/components/home/AboutSection';
 import { Footer } from '@/components/layout/Footer';
 
+
 interface ProfessorData {
   name: string;
   title: string;
@@ -33,6 +34,7 @@ interface ProfessorData {
     year: number;
   }>;
   researchInterests?: string[];
+  typeAnimationSequence?: string[]; // New field for dynamic sequence
 }
 
 export default function Home() {
@@ -59,6 +61,17 @@ export default function Home() {
     fetchProfessorData();
   }, []);
 
+const fullName = professor?.name || "Professor Name";
+let firstName = fullName;
+let lastName = '';
+let lastNameParts: string[] = []
+
+const parts = fullName.split(" ");
+if (parts.length > 1) {
+  [firstName, ...lastNameParts] = parts;
+  lastName = lastNameParts.join(" ");
+}
+
   return (
     <>
       <Header />
@@ -78,8 +91,8 @@ export default function Home() {
                   <div className="md:w-1/2">
                     {/* Animated name with moving line */}
                     <AnimatedName 
-                      firstName="Dr. Sanjeev" 
-                      lastName="Manhas" 
+                      firstName={firstName} 
+                      lastName={lastName} 
                     />
                       
                       <motion.h2 
@@ -90,20 +103,20 @@ export default function Home() {
                         whileHover={{ scale: 1.02 }}
                       >
                         <TypeAnimation
-                          sequence={[
-                            'Professor, Microelectronics & VLSI',
-                            1000,
-                            'Researcher in Semiconductor Devices',
-                            1000,
-                            'Expert in Circuit Modeling',
-                            1000,
-                          ]}
-                          wrapper="span"
-                          speed={50}
-                          repeat={Infinity}
-                          cursor={true}
-                          className="inline-block"
-                        />
+                        sequence={professor?.typeAnimationSequence || [
+                          'Professor, Microelectronics & VLSI',
+                          1000,
+                          'Researcher in Semiconductor Devices',
+                          1000,
+                          'Expert in Circuit Modeling',
+                          1000,
+                        ]}
+                        wrapper="span"
+                        speed={50}
+                        repeat={Infinity}
+                        cursor={true}
+                        className="inline-block"
+                      />
                       </motion.h2>
                       
                     {/* Bio with gradient hover effect */}

@@ -36,6 +36,7 @@ export async function PUT(request: Request) {
       socialLinks: data.socialLinks || [],
       researchInterests: data.researchInterests || [],
       profileImage: data.profileImage || '', // Make sure this exists!
+      typeAnimationSequence: data.typeAnimationSequence || []
     };
     
     // Update the professor document

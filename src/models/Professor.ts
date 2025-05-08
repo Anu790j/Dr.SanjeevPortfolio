@@ -1,4 +1,3 @@
-// src/models/Professor.ts
 import mongoose, { Schema } from 'mongoose';
 
 const ProfessorSchema = new Schema({
@@ -32,6 +31,16 @@ const ProfessorSchema = new Schema({
   profileImage: {
     type: String,
     default: ''
+  },
+  // New field for storing the type animation sequence
+  typeAnimationSequence: {
+    type: [String],
+    required: true,
+    default: [
+      'Professor, Microelectronics & VLSI',
+      'Researcher in Semiconductor Devices',
+      'Expert in Circuit Modeling'
+    ]
   }
 }, { timestamps: true });
 

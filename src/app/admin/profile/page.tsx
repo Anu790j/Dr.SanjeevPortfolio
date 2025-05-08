@@ -20,6 +20,7 @@ interface Professor {
   education: Education[];
   socialLinks: SocialLink[];
   researchInterests: string[];
+  typeAnimationSequence?: string[];
 }
 
 interface Education {
@@ -46,7 +47,8 @@ export default function AdminProfile() {
     profileImage: '',
     education: [],
     socialLinks: [],
-    researchInterests: []
+    researchInterests: [],
+    typeAnimationSequence: []
   });
   
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,8 @@ export default function AdminProfile() {
             profileImage: data.profileImage || '',
             education: data.education || [],
             socialLinks: data.socialLinks || [],
-            researchInterests: data.researchInterests || []
+            researchInterests: data.researchInterests || [],
+            typeAnimationSequence: data.typeAnimationSequence || [] 
           });
           
           if (data.profileImage) {
@@ -107,7 +110,7 @@ export default function AdminProfile() {
       setSaving(true);
       setMessage({ text: '', type: '' });
       
-      console.log('Saving professor data with image:', professor.profileImage);
+      console.log('Saving professor data with image:', professor);
       
       const res = await fetch('/api/professor', {
         method: 'PUT',
@@ -255,6 +258,29 @@ export default function AdminProfile() {
     });
   }
 
+  function handleAnimationSequenceChange(index: number, value: string) {
+    const updatedSequence = [...professor.typeAnimationSequence || []];
+    updatedSequence[index] = value;
+    setProfessor({
+      ...professor,
+      typeAnimationSequence: updatedSequence,
+    });
+  }
+
+  const addAnimationStep = () => {
+    const updatedSequence = [...(professor.typeAnimationSequence || []), ""];
+    setProfessor({ ...professor, typeAnimationSequence: updatedSequence });
+  };
+
+  function removeAnimationStep(index: number) {
+    const updatedSequence = [...professor.typeAnimationSequence || []];
+    updatedSequence.splice(index, 1);
+    setProfessor({
+      ...professor,
+      typeAnimationSequence: updatedSequence
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-10">
@@ -282,7 +308,7 @@ export default function AdminProfile() {
           View Public Profile
         </button>
       </div>
-      
+  
       {message.text && (
         <motion.div 
           className={`mb-8 p-4 rounded-md flex items-center ${
@@ -470,6 +496,41 @@ export default function AdminProfile() {
                 onChange={handleBioChange}
                 minHeight="250px"
               />
+            </div>
+  
+            {/* Animation Sequence Section */}
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-osc-blue mb-4">Animation Sequence</h3>
+              {professor.typeAnimationSequence?.map((step, index) => (
+                <div key={index} className="flex items-center gap-4 mb-4">
+                  <input
+                    type="text"
+                    value={step}
+                    onChange={(e) => handleAnimationSequenceChange(index, e.target.value)}
+                    className="w-full px-3 py-2 bg-bg-darker border-b-2 border-osc-blue/30 rounded-md focus:border-osc-blue focus:outline-none transition-colors"
+                    placeholder={`Animation Step ${index + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAnimationStep(index)}
+                    className="text-red-400 hover:text-red-500 p-2 rounded-full hover:bg-red-500 hover:bg-opacity-10 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addAnimationStep}
+                className="flex items-center px-4 py-2 text-osc-blue hover:bg-osc-blue hover:bg-opacity-10 rounded-md transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                Add Animation Step
+              </button>
             </div>
           </div>
           
@@ -709,5 +770,5 @@ export default function AdminProfile() {
         </form>
       </div>
     </div>
-  );
+  )
 }
